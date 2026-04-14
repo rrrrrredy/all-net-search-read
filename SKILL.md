@@ -1,0 +1,304 @@
+---
+name: all-net-search-read
+description: "Social media content search and extraction tool. Supports WeChat Official Accounts, Xiaohongshu, Twitter/X, YouTube, Reddit, Bilibili, Weibo. Triggers: search WeChat, search Xiaohongshu, search Weibo, search Twitter, search Bilibili, search YouTube, search Reddit, read article, full-web search, podcast transcript, Bilibili video download."
+tags: [search, social-media, wechat, xiaohongshu, twitter, youtube, bilibili, weibo]
+---
+
+# 🕵️ All-Net Search & Read V18
+
+**Give your AI Agent the ability to search and read across all major platforms — WeChat, Weibo, Xiaohongshu, Twitter/X, YouTube, Reddit, Bilibili, and more.**
+
+---
+
+## ⚠️ Gotchas
+
+> Known pitfalls — check here first before debugging.
+
+⚠️ **Xiaohongshu notes require login cookies** → Both search and detail pages require authentication. Without cookies, only indirect third-party content is available via web search engines. Login options: ① F12 copy cookies (30 sec, recommended) ② SMS verification relay ③ QR code scan ④ Console JS one-liner.
+
+⚠️ **Don't use xreach for Xiaohongshu** → xreach uses Twitter/X API and requires X account tokens — completely unrelated to Xiaohongshu.
+
+⚠️ **Twitter/X profile + timeline don't require login** → Use `x_scraper.py` (guest token method) for public profiles and timelines. Search functionality is still limited without auth-token. xreach serves as fallback when auth-token is available.
+
+⚠️ **xreach-cli must be installed separately** → `xreach` is not included in the `agent-reach` npm package. Install separately: `npm install -g xreach-cli`.
+
+---
+
+## 🛑 Hard Stop
+
+If the same tool call fails more than 3 times, stop immediately. List all failed approaches and reasons, mark as **"Manual intervention required"**, and wait for user confirmation.
+
+---
+
+## ✨ Core Features
+
+| Feature | Description |
+|:---|:---|
+| 🔍 **Full-Web Search** | Semantic search across the internet with time/source filtering |
+| 📱 **WeChat Articles** | Search and read WeChat Official Account articles |
+| 🐦 **Twitter/X** | View tweets, user profiles, search topics |
+| 📕 **Xiaohongshu** | Note content extraction, search |
+| 🎬 **Bilibili** | Video info, subtitles, comments |
+| ▶️ **YouTube** | Video info, subtitles, comments |
+| 💬 **Reddit** | Post and comment extraction |
+| 📝 **Web Distilling** | Convert any webpage to clean Markdown |
+| 📝 **Content Summary** | Auto-summarize long articles |
+| 🏷️ **Keyword Extraction** | Auto-extract key info, people, terms |
+| 🔔 **Scheduled Monitoring** | Monitor specific keywords/accounts for updates |
+| 📊 **Content Comparison** | Compare viewpoints from multiple sources on same topic |
+| 📥 **Multi-link Fetching** | Batch fetch multiple public links (max 5 per request, user confirms each) |
+| 🎙️ **Voice Reading** | Convert articles to audio |
+| 📚 **Bookmarks** | Save interesting content |
+| 🕐 **History** | Remember previous searches |
+
+---
+
+## 🎯 Trigger Words
+
+### Search
+- `搜 {keyword}` — Full-web search (e.g., `搜 OpenAI latest news`)
+- `{keyword} recent news` — Filter by time
+- `{platform} {keyword}` — Platform-specific search
+
+### Platform-Specific
+- `看 {account name} 最新文章` — WeChat article reading
+- `搜小红书 {keyword}` — Xiaohongshu search
+- `搜 Twitter {keyword}` / `搜推特 {keyword}` — Twitter search
+- `搜 B站 {keyword}` — Bilibili search
+- `搜 YouTube {keyword}` — YouTube search
+- `搜 Reddit {keyword}` — Reddit search
+
+### Content Processing
+- `{URL}` — Web distilling/reading
+- `总结 {content/link}` — Content summary
+- `提取关键词 {content/link}` — Keyword extraction
+
+### Management
+- `我的收藏` — View bookmarks
+- `收藏这个` — Bookmark current content
+- `搜索历史` / `我的记录` — History
+- `监控 {keyword}` — Set up scheduled monitoring
+
+---
+
+## 📖 Usage Examples
+
+### 1. Full-Web Search
+```
+搜 OpenAI latest funding news
+```
+→ Returns relevant content from across the web
+
+### 2. WeChat Article Reading
+```
+搜 机器之心 最近文章
+```
+→ Returns latest article list from the WeChat account
+
+### 3. Platform-Specific Search
+```
+小红书 AI tool recommendations
+推特 OpenAI latest updates
+B站 deep learning tutorials
+```
+
+### 4. Web Distilling
+```
+https://example.com/article
+```
+→ Auto-converts to clean Markdown, removes ads
+
+### 5. Content Summary
+```
+总结 https://mp.weixin.qq.com/s/xxx
+```
+→ Returns core takeaways
+
+### 6. Keyword Extraction
+```
+提取关键词 https://news.ycombinator.com/xxx
+```
+→ Returns key people, terms, organizations
+
+### 7. Scheduled Monitoring
+```
+监控 AI Agent updates
+```
+→ Push daily/weekly updates on the topic
+
+### 8. Bookmark Management
+```
+我的收藏
+收藏这个
+```
+
+---
+
+## 🛠️ Technical Backend
+
+Each platform uses appropriate tools:
+
+| Platform | Backend Tool | Account Required |
+|---|---|---|
+| Xiaohongshu | Playwright + cookies (with login) / web search fallback (without login) | ⚠️ Recommend configuring cookies |
+| Weibo | Web search + Playwright (visitor cookie) | ❌ No |
+| Bilibili | Bilibili API + yt-dlp | ❌ No |
+| YouTube | yt-dlp | ❌ No |
+| Reddit | Reddit JSON API | ❌ No |
+| Twitter/X | `x_scraper.py` (guest token, no account needed) | ❌ No (profile/timeline); search needs auth-token |
+| General Web | Jina Reader / web fetch | ❌ No |
+
+> ⚠️ **Important**: Xiaohongshu search and note detail pages both require login cookies. Without cookies, only third-party aggregated content is available. With cookies, Playwright can directly search and read full notes.
+
+---
+
+## 🔄 Execution Strategy (Fallback Rules)
+
+### Xiaohongshu Search
+
+> Xiaohongshu notes require login cookies — search engines cannot effectively index Xiaohongshu note content without authentication. **Simplest login method: copy two cookie values from browser DevTools, ~30 seconds.**
+
+#### 🔑 Option A: Cookie Configuration (Recommended, one-time setup)
+
+```
+1. Open https://www.xiaohongshu.com in your browser and log in
+2. Press F12 → Application → Cookies → https://www.xiaohongshu.com
+3. Copy the values of these two fields:
+   - web_session
+   - a1
+4. Run the setup script:
+   python3 scripts/xiaohongshu-setup-cookies.py
+5. Paste both values when prompted; auto-saved to cookies config
+```
+
+Cookies typically last several days to weeks; repeat steps when expired.
+
+#### 📱 Option B: SMS Verification Code Relay (Backup)
+
+> Use when cookies have expired and browser DevTools is inconvenient.
+
+**Steps:**
+```
+1. Agent opens Xiaohongshu login page via Playwright (with HTTP_PROXY if needed)
+2. Use JS injection to check user agreement, then click "Get verification code"
+3. User receives SMS and sends code back within 15 seconds
+4. Agent fills in the code and completes login
+5. Extract cookies and save to config
+```
+
+#### 📷 Option C: QR Code Scan Login
+
+> User scans QR code with phone. May need HTTP proxy to complete login.
+
+#### 🌐 Option D: Console JS Copy (Fastest)
+
+```
+1. Open https://www.xiaohongshu.com in browser (already logged in)
+2. Press F12 → Console, paste:
+   copy(document.cookie.split(';').reduce((o,s)=>{const[k,v]=s.trim().split('=');o[k]=v;return o},{}))
+3. Send the clipboard JSON to the agent
+4. Agent extracts web_session and a1, saves to config
+```
+
+#### Execution Strategy
+
+```
+Step 1: Check if cookie config exists and is valid
+  ✅ Has cookies → Use Playwright to search notes
+  ❌ No cookies → Step 2
+
+Step 2: Ask user for login method
+  A → Cookie Configuration
+  B → SMS Verification Relay
+  C → QR Code Scan
+  D → Console JS Copy
+  E → Skip login, use web search for indirect content
+
+Step 3: Web search fallback
+  → Search via Bing/Google for third-party content about Xiaohongshu topics
+  → Inform user: this is indirect content; for original notes, choose a login option
+```
+
+#### Reading a Single Note (Known URL)
+
+```
+With cookies: Use Playwright to load and extract
+Without cookies: Cannot read directly → Ask user to provide cookies or manually copy note content
+```
+
+### Twitter/X Search / Profile / Timeline
+
+```
+Step 1: Get profile or timeline (no login required)
+  python3 scripts/x_scraper.py profile <handle>
+  python3 scripts/x_scraper.py timeline <handle> --count 20
+  ✅ Success → Return followers, bio, tweet list
+  ❌ Proxy unavailable / API change → Step 2
+
+Step 2: Fallback xreach (when auth-token available)
+  xreach search "{keyword}" --json
+  ✅ Success → Return tweets
+  ❌ No auth-token → Inform user search requires X account token
+```
+
+> ⚠️ `x_scraper.py` requires `HTTP_PROXY` to be set for environments where direct X access is blocked.
+
+### General Fallback Principle
+Prefer platform-specific API → fallback to web search → fallback to Brave Search
+
+---
+
+## First Use
+
+Run the dependency check script before first use:
+```bash
+bash scripts/setup.sh
+```
+> The agent will auto-run this on first trigger; usually no manual action needed.
+
+---
+
+## 📦 Dependencies & Installation
+
+### Python packages
+- Python 3.8+
+- `requests`
+- `beautifulsoup4`
+
+### Optional: Twitter/X CLI
+For Twitter/X search functionality, install `xreach-cli`:
+```bash
+npm install -g xreach-cli
+```
+
+### Optional: Dependency Skills
+This skill works best with:
+- [x-twitter-scraper](https://github.com/rrrrrredy/x-twitter-scraper) — Twitter/X guest token scraper (for profile/timeline without login)
+
+Install:
+```bash
+git clone https://github.com/rrrrrredy/x-twitter-scraper ~/skills/x-twitter-scraper
+```
+
+Or set environment variable:
+```bash
+export SKILL_X_TWITTER_SCRAPER_PATH=/path/to/x-twitter-scraper
+```
+
+---
+
+## 🔒 Security Constraints (Mandatory)
+
+1. **Public internet content only**: Do not access internal/corporate domains
+2. **Multi-link fetching requires user confirmation**: When multiple URLs are in one request, agent must list them and get explicit user approval before fetching (max 5 per batch)
+3. **No large-scale scraping**: Do not use for systematic batch collection, automated loop downloads, or high-frequency requests to a single site
+4. **Respect robots.txt and anti-scraping protections**
+5. **Scheduled monitoring requires user notification**: Before setting up monitoring tasks, explain monitoring target, frequency, and data destination to the user
+
+## ⚠️ Notes
+
+1. **Twitter/X profile/timeline don't require login**: Use `x_scraper.py` (guest token) for profiles and timelines; search still needs `xreach-cli` (`npm install -g xreach-cli`)
+2. **Don't use xreach for Xiaohongshu**: xreach uses Twitter/X API, unrelated to Xiaohongshu
+3. **Xiaohongshu notes require login cookies**: Without cookies, only web search fallback provides indirect content. Two login options: ① Cookie copy (recommended, 30 sec) ② SMS verification relay
+4. Some platforms (WeChat, Xiaohongshu) may be subject to anti-scraping restrictions
+5. Scheduled monitoring requires cron job configuration

@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "agent_reach_required": "1.3.0",
+  "default_search_engine": "xreach",
+  "default_platforms": [
+    "twitter",
+    "x",
+    "小红书",
+    "bilibili",
+    "b站",
+    "youtube",
+    "reddit",
+    "公众号",
+    "微信"
+  ],
+  "search_settings": {
+    "max_results": 10,
+    "timeout": 30,
+    "enable_cache": true,
+    "cache_duration": 300
+  },
+  "monitor_settings": {
+    "default_frequency": "daily",
+    "max_monitors": 10,
+    "enable_notification": true
+  }
+}
