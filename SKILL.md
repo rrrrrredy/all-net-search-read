@@ -20,7 +20,7 @@ tags: [search, social-media, wechat, xiaohongshu, twitter, youtube, bilibili, we
 
 ⚠️ **Twitter/X profile + timeline don't require login** → Use `x_scraper.py` (guest token method) for public profiles and timelines. Search functionality is still limited without auth-token.
 
-⚠️ **Web search backend** → The default search uses Jina Search API (free, no key). For better results, configure your preferred search API (Brave Search, SerpAPI, etc.) in `config/default_config.json`.
+⚠️ **Web search backend** → Supports two tiers: **agent-reach** (xreach/xread) for best results across 14+ platforms, with **Jina Search API** (free, no key) as automatic fallback. Install agent-reach via `npx clawhub install agent-reach` for full capabilities.
 
 ---
 
@@ -145,8 +145,8 @@ Each platform uses appropriate tools:
 | Bilibili | Bilibili API + yt-dlp | ❌ No |
 | YouTube | yt-dlp | ❌ No |
 | Reddit | Reddit JSON API | ❌ No |
-| Twitter/X | `x_scraper.py` (guest token, no account needed) | ❌ No (profile/timeline); search needs auth-token |
-| General Web | Jina Reader / web fetch | ❌ No |
+| Twitter/X | xreach (agent-reach) → `x_scraper.py` (guest token fallback) | ❌ No (profile/timeline); search via xreach needs auth-token |
+| General Web | xread (agent-reach) → Jina Reader / curl fallback | ❌ No |
 
 > ⚠️ **Important**: Xiaohongshu search and note detail pages both require login cookies. Without cookies, only third-party aggregated content is available. With cookies, Playwright can directly search and read full notes.
 
@@ -244,7 +244,7 @@ Step 2: Fallback web search
 > ⚠️ `x_scraper.py` requires `HTTP_PROXY` to be set for environments where direct X access is blocked.
 
 ### General Fallback Principle
-Prefer platform-specific API → fallback to web search → fallback to Brave Search
+Prefer agent-reach (xreach/xread) → platform-specific API → Jina web search → curl
 
 ---
 
@@ -268,19 +268,37 @@ bash scripts/setup.sh
 ### Optional: Search API
 For better search results, configure a search API key in `config/default_config.json`. Supported: Brave Search, SerpAPI, or any compatible web search API.
 
+### Recommended: Agent Reach (enhanced multi-platform search & read)
+
+**agent-reach** provides powerful multi-platform search and content extraction across 14+ platforms. The skill auto-detects and uses it when available; without it, falls back to Jina Search API.
+
+**Install agent-reach (choose one):**
+```bash
+# Option 1: pip (recommended — installs Python package + CLI)
+pip install agent-reach
+agent-reach install --env=auto --safe
+
+# Option 2: ClawHub (installs skill entry point)
+npx clawhub install agent-reach
+```
+
+After installation, run `agent-reach doctor` to check which platforms are available. The skill automatically detects `xreach` (search) and `xread` (content extraction) CLIs at runtime.
+
+**Optional add-ons for agent-reach** (unlock more platforms):
+```bash
+# Exa semantic search (recommended)
+npm install -g mcporter
+mcporter config add exa https://mcp.exa.ai/mcp
+
+# Reddit
+pip install 'rdt-cli>=0.4.2'
+```
+
+> Without agent-reach, the skill falls back to **Jina Search API** (free, no key required) — still works for most use cases.
+
 ### Optional: Dependency Skills
-This skill works best with:
+- [agent-reach](https://clawhub.com) — Multi-platform search & read (xreach/xread/mcporter CLIs)
 - [x-twitter-scraper](https://github.com/rrrrrredy/x-twitter-scraper) — Twitter/X guest token scraper (for profile/timeline without login)
-
-Install:
-```bash
-git clone https://github.com/rrrrrredy/x-twitter-scraper ~/skills/x-twitter-scraper
-```
-
-Or set environment variable:
-```bash
-export SKILL_X_TWITTER_SCRAPER_PATH=/path/to/x-twitter-scraper
-```
 
 ---
 

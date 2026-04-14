@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
 """
 全网搜读 - 主入口
-提供全网搜索+内容提取功能
+整合 Agent Reach 能力，提供全网搜索+内容提取功能
+Fallback: Jina Search API (free, no key required) when agent-reach is not installed.
 """
 
 import sys
 import os
 import json
 import subprocess
+import shutil
 import re
 from typing import List, Dict, Optional
 
 # 配置目录
 CONFIG_DIR = os.path.expanduser("~/.all-net-search-read")
 DATA_DIR = os.path.join(CONFIG_DIR, "data")
+
+# Check if agent-reach tools are available
+HAS_XREACH = shutil.which("xreach") is not None
+HAS_XREAD = shutil.which("xread") is not None
 
 class AllNetSearchRead:
     """全网搜读主类"""
@@ -43,19 +49,80 @@ class AllNetSearchRead:
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     
+    def check_agent_reach_update(self) -> Dict:
+        """检查 Agent Reach 更新"""
+        if not HAS_XREACH:
+            return {
+                "status": "not_installed",
+                "message": "agent-reach not installed. Install via: npx clawhub install agent-reach\nUsing Jina Search API as fallback.",
+                "need_update": None
+            }
+        try:
+            result = subprocess.run(
+                ["agent-reach", "check-update"],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            output = result.stdout + result.stderr
+            
+            if "已是最新版本" in output:
+                return {
+                    "status": "up_to_date",
+                    "message": output.strip(),
+                    "need_update": False
+                }
+            else:
+                return {
+                    "status": "update_available",
+                    "message": output.strip(),
+                    "need_update": True
+                }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": str(e),
+                "need_update": None
+            }
+    
     def search(self, query: str, platform: str = None) -> str:
-        """全网搜索"""
+        """全网搜索 — agent-reach (xreach) 优先，Jina fallback"""
         if platform:
-            # 特定平台搜索
+            if HAS_XREACH:
+                cmd = self._get_platform_cmd(platform, query)
+                result = self._run_command(cmd)
+                if result and "❌" not in result and len(result.strip()) > 20:
+                    return result
+            # Fallback to web search
             search_query = self._get_platform_query(platform, query)
+            return self._web_search(search_query)
         else:
-            search_query = query
-        
-        # Use web search (curl + search API or web_fetch)
-        return self._web_search(search_query)
+            if HAS_XREACH:
+                cmd = ["xreach", "search", query, "--json"]
+                result = self._run_command(cmd)
+                if result and "❌" not in result and len(result.strip()) > 20:
+                    return result
+            # Fallback to web search
+            return self._web_search(query)
+
+    def _get_platform_cmd(self, platform: str, query: str) -> List[str]:
+        """获取平台特定 agent-reach 命令"""
+        platform_map = {
+            "twitter": ["xreach", "search", f"@{query}"],
+            "推特": ["xreach", "search", f"@{query}"],
+            "x": ["xreach", "search", f"@{query}"],
+            "小红书": ["xreach", "search", f"site:xiaohongshu.com {query}"],
+            "b站": ["xreach", "site", "bilibili.com", query],
+            "bilibili": ["xreach", "site", "bilibili.com", query],
+            "youtube": ["xreach", "site", "youtube.com", query],
+            "reddit": ["xreach", "search", f"site:reddit.com {query}"],
+            "公众号": ["xreach", "search", f"site:weixin.qq.com {query}"],
+            "微信": ["xreach", "search", f"site:weixin.qq.com {query}"],
+        }
+        return platform_map.get(platform.lower(), ["xreach", "search", query])
     
     def _get_platform_query(self, platform: str, query: str) -> str:
-        """构建平台特定搜索查询"""
+        """构建平台特定搜索查询（Jina fallback 用）"""
         platform_map = {
             "twitter": f"site:twitter.com OR site:x.com {query}",
             "推特": f"site:twitter.com OR site:x.com {query}",
@@ -71,8 +138,7 @@ class AllNetSearchRead:
         return platform_map.get(platform.lower(), query)
     
     def _web_search(self, query: str) -> str:
-        """通用 web search（用户可自配搜索引擎 API）"""
-        # Default: use curl + Jina search API (free, no key required)
+        """Jina Search API fallback（free, no key required）"""
         jina_url = f"https://s.jina.ai/{query}"
         cmd = ["curl", "-s", "-H", "Accept: application/json", jina_url]
         try:
@@ -81,15 +147,25 @@ class AllNetSearchRead:
                 return result.stdout
         except:
             pass
-        return f"❌ Web search failed for: {query}. Please configure a search engine API (e.g., Brave Search, SerpAPI) in config."
+        return f"❌ Web search failed for: {query}. Install agent-reach for better results: npx clawhub install agent-reach"
     
     def read_url(self, url: str) -> str:
-        """读取网页内容"""
-        # 优先使用 r.jina.ai 提取
+        """读取网页内容 — xread 优先，Jina r.jina.ai fallback"""
+        # 优先使用 xread（agent-reach 生态）
+        if HAS_XREAD:
+            try:
+                result = subprocess.run(
+                    ["xread", url],
+                    capture_output=True, text=True, timeout=60
+                )
+                if result.stdout and len(result.stdout) > 100:
+                    return result.stdout
+            except:
+                pass
+        
+        # Fallback: r.jina.ai
         jina_url = f"https://r.jina.ai/{url}"
-        
         cmd = ["curl", "-s", jina_url]
-        
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             if result.stdout and len(result.stdout) > 100:
@@ -97,7 +173,7 @@ class AllNetSearchRead:
         except:
             pass
         
-        # Fallback: use curl directly
+        # Last resort: curl directly
         cmd = ["curl", "-s", "-L", url]
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
@@ -238,26 +314,30 @@ class AllNetSearchRead:
     
     def help(self) -> str:
         """帮助信息"""
-        return """🕵️ 全网搜读 - 使用指南
+        reach_status = "✅ installed" if HAS_XREACH else "❌ not installed (using Jina fallback)"
+        return f"""🕵️ 全网搜读 - 使用指南
+
+Agent Reach: {reach_status}
+Install for best results: npx clawhub install agent-reach
 
 🔍 搜索:
-  搜 {关键词} - 全网搜索
-  小红书 {关键词} - 小红书搜索
-  推特 {关键词} - Twitter搜索
+  搜 {{关键词}} - 全网搜索
+  小红书 {{关键词}} - 小红书搜索
+  推特 {{关键词}} - Twitter搜索
 
 📖 内容:
-  {网址} - 网页脱水/读取
-  总结 {网址/内容} - 内容摘要
-  提取关键词 {网址/内容} - 关键词提取
+  {{网址}} - 网页脱水/读取
+  总结 {{网址/内容}} - 内容摘要
+  提取关键词 {{网址/内容}} - 关键词提取
 
 📚 管理:
   我的收藏 - 查看收藏
   收藏这个 - 收藏当前内容
   搜索历史 - 查看历史
-  监控 {关键词} - 添加监控
+  监控 {{关键词}} - 添加监控
 
 🔄 工具:
-  检测更新 - 检查依赖状态
+  检测更新 - 检查 Agent Reach 更新
 """
     
     def process(self, query: str) -> str:
@@ -270,7 +350,13 @@ class AllNetSearchRead:
         
         # 检测更新
         if '检测更新' in query or '检查更新' in query:
-            return "✅ All dependencies are managed via pip/npm. Run `bash scripts/setup.sh` to check."
+            result = self.check_agent_reach_update()
+            if result['need_update'] == False:
+                return f"✅ Agent Reach 已是最新版本\n\n{result['message']}"
+            elif result['need_update'] == True:
+                return f"⚠️ 有新版本可用！\n\n{result['message']}\n\n是否需要我帮你更新？"
+            else:
+                return f"ℹ️ {result['message']}"
         
         # 历史记录
         if '搜索历史' in query or '我的记录' in query:
