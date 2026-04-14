@@ -1,7 +1,6 @@
 {
   "version": "1.0.0",
-  "agent_reach_required": "1.3.0",
-  "default_search_engine": "xreach",
+  "default_search_engine": "web_search",
   "default_platforms": [
     "twitter",
     "x",

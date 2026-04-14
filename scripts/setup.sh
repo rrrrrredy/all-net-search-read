@@ -8,18 +8,6 @@ echo "🔍 Checking all-net-search-read dependencies..."
 
 MISSING=0
 
-# Check npm dependency: xreach-cli (Twitter/X features)
-echo ""
-echo "--- npm dependencies ---"
-if command -v xreach &>/dev/null; then
-  echo "✅ xreach-cli"
-else
-  echo "⚠️  xreach-cli not installed (needed for Twitter/X search)"
-  MISSING=1
-  echo "📦 Installing xreach-cli..."
-  npm install -g xreach-cli || echo "⚠️  xreach-cli installation failed; Twitter/X search will be unavailable"
-fi
-
 # Check Python dependencies
 echo ""
 echo "--- Python dependencies ---"
@@ -52,7 +40,7 @@ fi
 # Final verification
 echo ""
 echo "🔍 Final verification..."
-command -v xreach &>/dev/null && echo "✅ xreach-cli" || echo "⚠️  xreach-cli missing (only affects Twitter/X search)"
+command -v curl &>/dev/null && echo "✅ curl" || echo "⚠️  curl missing (needed for web search)"
 python3 -c "import requests, bs4; print('✅ Python dependencies')"
 
 echo "🎉 Setup complete — all-net-search-read is ready to use"

@@ -12,7 +12,7 @@
 
 ## Twitter/X
 - Use `x_scraper.py` (guest token) for profiles and timelines — no account needed
-- xreach CLI needed for search functionality (requires auth-token)
+- Search uses web search fallback (site:twitter.com queries)
 - Set `HTTP_PROXY` if direct access to X is blocked
 
 ## Weibo

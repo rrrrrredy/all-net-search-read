@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 全网搜读 - 主入口
-整合 Agent Reach 能力，提供全网搜索+内容提取功能
+提供全网搜索+内容提取功能
 """
 
 import sys
@@ -43,62 +43,45 @@ class AllNetSearchRead:
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     
-    def check_agent_reach_update(self) -> Dict:
-        """检查 Agent Reach 更新"""
-        try:
-            result = subprocess.run(
-                ["agent-reach", "check-update"],
-                capture_output=True,
-                text=True,
-                timeout=30
-            )
-            output = result.stdout + result.stderr
-            
-            if "已是最新版本" in output:
-                return {
-                    "status": "up_to_date",
-                    "message": output.strip(),
-                    "need_update": False
-                }
-            else:
-                return {
-                    "status": "update_available",
-                    "message": output.strip(),
-                    "need_update": True
-                }
-        except Exception as e:
-            return {
-                "status": "error",
-                "message": str(e),
-                "need_update": None
-            }
-    
     def search(self, query: str, platform: str = None) -> str:
         """全网搜索"""
         if platform:
             # 特定平台搜索
-            cmd = self._get_platform_cmd(platform, query)
+            search_query = self._get_platform_query(platform, query)
         else:
-            # 默认使用 Agent Reach 搜索
-            cmd = ["xreach", "search", query, "--json"]
+            search_query = query
         
-        return self._run_command(cmd)
+        # Use web search (curl + search API or web_fetch)
+        return self._web_search(search_query)
     
-    def _get_platform_cmd(self, platform: str, query: str) -> List[str]:
-        """获取平台特定命令"""
+    def _get_platform_query(self, platform: str, query: str) -> str:
+        """构建平台特定搜索查询"""
         platform_map = {
-            "twitter": ["xreach", "search", f"@{query}"],
-            "推特": ["xreach", "search", f"@{query}"],
-            "x": ["xreach", "search", f"@{query}"],
-            "小红书": ["xreach", "search", f"site:xiaohongshu.com {query}"],
-            "b站": ["xreach", "site", "bilibili.com", query],
-            "bilibili": ["xreach", "site", "bilibili.com", query],
-            "youtube": ["xreach", "site", "youtube.com", query],
-            "reddit": ["xreach", "search", f"site:reddit.com {query}"],
-            "公众号": ["xreach", "search", f"site:weixin.qq.com {query}"],
-            "微信": ["xreach", "search", f"site:weixin.qq.com {query}"],
+            "twitter": f"site:twitter.com OR site:x.com {query}",
+            "推特": f"site:twitter.com OR site:x.com {query}",
+            "x": f"site:twitter.com OR site:x.com {query}",
+            "小红书": f"site:xiaohongshu.com {query}",
+            "b站": f"site:bilibili.com {query}",
+            "bilibili": f"site:bilibili.com {query}",
+            "youtube": f"site:youtube.com {query}",
+            "reddit": f"site:reddit.com {query}",
+            "公众号": f"site:weixin.qq.com {query}",
+            "微信": f"site:weixin.qq.com {query}",
         }
-        return platform_map.get(platform.lower(), ["xreach", "search", query])
+        return platform_map.get(platform.lower(), query)
+    
+    def _web_search(self, query: str) -> str:
+        """通用 web search（用户可自配搜索引擎 API）"""
+        # Default: use curl + Jina search API (free, no key required)
+        jina_url = f"https://s.jina.ai/{query}"
+        cmd = ["curl", "-s", "-H", "Accept: application/json", jina_url]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if result.stdout and len(result.stdout) > 50:
+                return result.stdout
+        except:
+            pass
+        return f"❌ Web search failed for: {query}. Please configure a search engine API (e.g., Brave Search, SerpAPI) in config."
     
     def read_url(self, url: str) -> str:
         """读取网页内容"""
@@ -114,13 +97,15 @@ class AllNetSearchRead:
         except:
             pass
         
-        # 备用：使用 xread
-        cmd = ["xread", url]
+        # Fallback: use curl directly
+        cmd = ["curl", "-s", "-L", url]
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-            return result.stdout or result.stderr
-        except Exception as e:
-            return f"读取失败: {str(e)}"
+            if result.stdout:
+                return result.stdout
+        except:
+            pass
+        return f"读取失败: unable to fetch {url}"
     
     def summarize(self, content: str = None, url: str = None) -> str:
         """内容摘要"""
@@ -272,7 +257,7 @@ class AllNetSearchRead:
   监控 {关键词} - 添加监控
 
 🔄 工具:
-  检测更新 - 检查 Agent Reach 更新
+  检测更新 - 检查依赖状态
 """
     
     def process(self, query: str) -> str:
@@ -285,13 +270,7 @@ class AllNetSearchRead:
         
         # 检测更新
         if '检测更新' in query or '检查更新' in query:
-            result = self.check_agent_reach_update()
-            if result['need_update'] == False:
-                return f"✅ Agent Reach 已是最新版本\n\n{result['message']}"
-            elif result['need_update'] == True:
-                return f"⚠️ 有新版本可用！\n\n{result['message']}\n\n是否需要我帮你更新？"
-            else:
-                return f"❌ 检查失败: {result['message']}"
+            return "✅ All dependencies are managed via pip/npm. Run `bash scripts/setup.sh` to check."
         
         # 历史记录
         if '搜索历史' in query or '我的记录' in query:

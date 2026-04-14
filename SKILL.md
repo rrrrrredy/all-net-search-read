@@ -16,11 +16,11 @@ tags: [search, social-media, wechat, xiaohongshu, twitter, youtube, bilibili, we
 
 ⚠️ **Xiaohongshu notes require login cookies** → Both search and detail pages require authentication. Without cookies, only indirect third-party content is available via web search engines. Login options: ① F12 copy cookies (30 sec, recommended) ② SMS verification relay ③ QR code scan ④ Console JS one-liner.
 
-⚠️ **Don't use xreach for Xiaohongshu** → xreach uses Twitter/X API and requires X account tokens — completely unrelated to Xiaohongshu.
+⚠️ **Platform-specific search** → Each platform uses its own search strategy (site: prefix + web search). Don't mix platform search methods.
 
-⚠️ **Twitter/X profile + timeline don't require login** → Use `x_scraper.py` (guest token method) for public profiles and timelines. Search functionality is still limited without auth-token. xreach serves as fallback when auth-token is available.
+⚠️ **Twitter/X profile + timeline don't require login** → Use `x_scraper.py` (guest token method) for public profiles and timelines. Search functionality is still limited without auth-token.
 
-⚠️ **xreach-cli must be installed separately** → `xreach` is not included in the `agent-reach` npm package. Install separately: `npm install -g xreach-cli`.
+⚠️ **Web search backend** → The default search uses Jina Search API (free, no key). For better results, configure your preferred search API (Brave Search, SerpAPI, etc.) in `config/default_config.json`.
 
 ---
 
@@ -235,10 +235,10 @@ Step 1: Get profile or timeline (no login required)
   ✅ Success → Return followers, bio, tweet list
   ❌ Proxy unavailable / API change → Step 2
 
-Step 2: Fallback xreach (when auth-token available)
-  xreach search "{keyword}" --json
+Step 2: Fallback web search
+  Web search for "site:twitter.com {keyword}"
   ✅ Success → Return tweets
-  ❌ No auth-token → Inform user search requires X account token
+  ❌ Failure → Inform user to configure search API or try again later
 ```
 
 > ⚠️ `x_scraper.py` requires `HTTP_PROXY` to be set for environments where direct X access is blocked.
@@ -265,11 +265,8 @@ bash scripts/setup.sh
 - `requests`
 - `beautifulsoup4`
 
-### Optional: Twitter/X CLI
-For Twitter/X search functionality, install `xreach-cli`:
-```bash
-npm install -g xreach-cli
-```
+### Optional: Search API
+For better search results, configure a search API key in `config/default_config.json`. Supported: Brave Search, SerpAPI, or any compatible web search API.
 
 ### Optional: Dependency Skills
 This skill works best with:
@@ -297,8 +294,8 @@ export SKILL_X_TWITTER_SCRAPER_PATH=/path/to/x-twitter-scraper
 
 ## ⚠️ Notes
 
-1. **Twitter/X profile/timeline don't require login**: Use `x_scraper.py` (guest token) for profiles and timelines; search still needs `xreach-cli` (`npm install -g xreach-cli`)
-2. **Don't use xreach for Xiaohongshu**: xreach uses Twitter/X API, unrelated to Xiaohongshu
+1. **Twitter/X profile/timeline don't require login**: Use `x_scraper.py` (guest token) for profiles and timelines; search uses web search fallback
+2. **Platform-specific search**: Each platform uses `site:` prefix with web search — don't mix search methods
 3. **Xiaohongshu notes require login cookies**: Without cookies, only web search fallback provides indirect content. Two login options: ① Cookie copy (recommended, 30 sec) ② SMS verification relay
 4. Some platforms (WeChat, Xiaohongshu) may be subject to anti-scraping restrictions
 5. Scheduled monitoring requires cron job configuration

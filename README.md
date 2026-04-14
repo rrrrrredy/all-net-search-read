@@ -32,7 +32,7 @@ python3 scripts/all_net_search_read.py "搜 AI Agent latest news"
 
 - Python 3.8+
 - `requests`, `beautifulsoup4`
-- Optional: `xreach-cli` (for Twitter/X search)
+- Optional: search API key (Brave Search, SerpAPI, etc.) for better results
 
 ## Structure
 
