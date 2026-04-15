@@ -23,6 +23,14 @@ tags: [search, social-media, wechat, xiaohongshu, twitter, youtube, bilibili, we
 
 ⚠️ **Web search backend** → Supports two tiers: **agent-reach** (xreach/xread) for best results across 14+ platforms, with **Jina Search API** (free, no key) as automatic fallback. Install agent-reach via `npx clawhub install agent-reach` for full capabilities.
 
+⚠️ **小红书沙箱 IP 被封** → 所有登录路径失败，只能用 web search `site:xiaohongshu.com` 降级获取摘要。
+
+⚠️ **微信公众号需要代理** → 沙箱直连微信服务器超时，必须配置 HTTP 代理（`HTTP_PROXY`）。
+
+⚠️ **B站字幕需要登录** → 无 cookie 只能获取视频流，字幕/弹幕需要登录态。
+
+⚠️ **多链接批量获取需确认** → 一次请求含多个 URL 时，必须列出并获得用户确认（最多 5 个/批）。
+
 ---
 
 ## 🛑 Hard Stop
@@ -46,9 +54,7 @@ If the same tool call fails more than 3 times, stop immediately. List all failed
 | 📝 **Content Summary** | Auto-summarize long articles |
 | 🏷️ **Keyword Extraction** | Auto-extract key info, people, terms |
 | 🔔 **Scheduled Monitoring** | Monitor specific keywords/accounts for updates |
-| 📊 **Content Comparison** | Compare viewpoints from multiple sources on same topic |
 | 📥 **Multi-link Fetching** | Batch fetch multiple public links (max 5 per request, user confirms each) |
-| 🎙️ **Voice Reading** | Convert articles to audio |
 | 📚 **Bookmarks** | Save interesting content |
 | 🕐 **History** | Remember previous searches |
 
@@ -157,75 +163,10 @@ Each platform uses appropriate tools:
 
 ### Xiaohongshu Search
 
-> Xiaohongshu notes require login cookies — search engines cannot effectively index Xiaohongshu note content without authentication. **Simplest login method: copy two cookie values from browser DevTools, ~30 seconds.**
+> Xiaohongshu notes require login cookies. Without cookies, falls back to web search for indirect content.
+> **For detailed login setup (4 options: Cookie copy, SMS relay, QR scan, Console JS)**, see `references/xiaohongshu-login.md`.
 
-#### 🔑 Option A: Cookie Configuration (Recommended, one-time setup)
-
-```
-1. Open https://www.xiaohongshu.com in your browser and log in
-2. Press F12 → Application → Cookies → https://www.xiaohongshu.com
-3. Copy the values of these two fields:
-   - web_session
-   - a1
-4. Run the setup script:
-   python3 scripts/xiaohongshu-setup-cookies.py
-5. Paste both values when prompted; auto-saved to cookies config
-```
-
-Cookies typically last several days to weeks; repeat steps when expired.
-
-#### 📱 Option B: SMS Verification Code Relay (Backup)
-
-> Use when cookies have expired and browser DevTools is inconvenient.
-
-**Steps:**
-```
-1. Agent opens Xiaohongshu login page via Playwright (with HTTP_PROXY if needed)
-2. Use JS injection to check user agreement, then click "Get verification code"
-3. User receives SMS and sends code back within 15 seconds
-4. Agent fills in the code and completes login
-5. Extract cookies and save to config
-```
-
-#### 📷 Option C: QR Code Scan Login
-
-> User scans QR code with phone. May need HTTP proxy to complete login.
-
-#### 🌐 Option D: Console JS Copy (Fastest)
-
-```
-1. Open https://www.xiaohongshu.com in browser (already logged in)
-2. Press F12 → Console, paste:
-   copy(document.cookie.split(';').reduce((o,s)=>{const[k,v]=s.trim().split('=');o[k]=v;return o},{}))
-3. Send the clipboard JSON to the agent
-4. Agent extracts web_session and a1, saves to config
-```
-
-#### Execution Strategy
-
-```
-Step 1: Check if cookie config exists and is valid
-  ✅ Has cookies → Use Playwright to search notes
-  ❌ No cookies → Step 2
-
-Step 2: Ask user for login method
-  A → Cookie Configuration
-  B → SMS Verification Relay
-  C → QR Code Scan
-  D → Console JS Copy
-  E → Skip login, use web search for indirect content
-
-Step 3: Web search fallback
-  → Search via Bing/Google for third-party content about Xiaohongshu topics
-  → Inform user: this is indirect content; for original notes, choose a login option
-```
-
-#### Reading a Single Note (Known URL)
-
-```
-With cookies: Use Playwright to load and extract
-Without cookies: Cannot read directly → Ask user to provide cookies or manually copy note content
-```
+**Quick path**: Check cookies → valid: Playwright search → expired/missing: web search fallback (`site:xiaohongshu.com`)
 
 ### Twitter/X Search / Profile / Timeline
 
@@ -313,24 +254,6 @@ pip install 'rdt-cli>=0.4.2'
 3. **No large-scale scraping**: Do not use for systematic batch collection, automated loop downloads, or high-frequency requests to a single site
 4. **Respect robots.txt and anti-scraping protections**
 5. **Scheduled monitoring requires user notification**: Before setting up monitoring tasks, explain monitoring target, frequency, and data destination to the user
-
-## ⚠️ Notes
-
-1. **Twitter/X profile/timeline don't require login**: Use `x_scraper.py` (guest token) for profiles and timelines; search uses web search fallback
-2. **Platform-specific search**: Each platform uses `site:` prefix with web search — don't mix search methods
-3. **Xiaohongshu notes require login cookies**: Without cookies, only web search fallback provides indirect content. Two login options: ① Cookie copy (recommended, 30 sec) ② SMS verification relay
-4. Some platforms (WeChat, Xiaohongshu) may be subject to anti-scraping restrictions
-5. Scheduled monitoring requires cron job configuration
-
----
-
-## Gotchas
-
-⚠️ **小红书沙箱 IP 被封** → 所有登录路径失败，只能用 web search `site:xiaohongshu.com` 降级获取摘要。
-⚠️ **微信公众号需要代理** → 沙箱直连微信服务器超时，必须配置 HTTP 代理。
-⚠️ **Twitter/X guest token 有效期短** → 通常几小时过期，脚本会自动重新获取，但连续失败 3 次应停止。
-⚠️ **B站字幕需要登录** → 无 cookie 只能获取视频流，字幕/弹幕需要登录态。
-⚠️ **多链接批量获取需确认** → 一次请求含多个 URL 时，必须列出并获得用户确认（最多 5 个/批）。
 
 ## Changelog
 
