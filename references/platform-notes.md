@@ -5,7 +5,7 @@
 - 降级：catclaw-search → web_fetch（无登录态内容）
 
 ## 微信公众号
-- 必须走上游代理：10.59.78.158:3128
+- 必须走上游代理：YOUR_PROXY_HOST:PORT
 - 直连沙箱 IP 被微信封锁
 
 ## 推特/X
@@ -52,7 +52,7 @@
 
 ### B站视频流下载 SOP
 
-**原理**：B站公开 API 无需 cookie 即可获取视频流 CDN URL，但 bilivideo.com 沙箱直连超时，必须走上游代理 10.59.78.158:3128。
+**原理**：B站公开 API 无需 cookie 即可获取视频流 CDN URL，但 bilivideo.com 沙箱直连超时，必须走上游代理 YOUR_PROXY_HOST:PORT。
 
 **可用路径表**：
 
@@ -88,7 +88,7 @@ curl -s "https://api.bilibili.com/x/player/playurl?avid=<aid>&cid=<cid>&qn=16&fn
 
 **步骤4：用上游代理下载（关键）**
 ```bash
-curl -x http://10.59.78.158:3128 -L "<CDN_URL>" -o /tmp/bili_video.mp4 \
+curl -x http://YOUR_PROXY_HOST:PORT -L "<CDN_URL>" -o /tmp/bili_video.mp4 \
   -H "User-Agent: Mozilla/5.0" -H "Referer: https://www.bilibili.com/video/<BV>" \
   --progress-bar
 ```
@@ -103,7 +103,7 @@ text = ' '.join([s.text for s in segments])
 
 **踩坑**：
 - bilivideo.com CDN URL 约 1 小时有效，尽快下载
-- 本地代理 127.0.0.1:8118 对 bilivideo.com 返回 403 CONNECT tunnel，必须用 10.59.78.158:3128
+- 本地代理 127.0.0.1:8118 对 bilivideo.com 返回 403 CONNECT tunnel，必须用 YOUR_PROXY_HOST:PORT
 - Referer 头不能省，否则 CDN 返回 403
 - 付费/会员视频无法用此方法
 - /tmp 重启丢失，及时持久化
@@ -132,7 +132,7 @@ text = ' '.join([s.text for s in segments])
 
 2. **下载 RSS XML（必须走上游代理）**
    ```bash
-   curl -x http://10.59.78.158:3128 -L "<feedUrl>" -o /tmp/podcast_feed.xml
+   curl -x http://YOUR_PROXY_HOST:PORT -L "<feedUrl>" -o /tmp/podcast_feed.xml
    ```
 
 3. **解析最新一期**
@@ -148,7 +148,7 @@ text = ' '.join([s.text for s in segments])
 
 4. **下载音频（必须走上游代理）**
    ```bash
-   curl -x http://10.59.78.158:3128 -L "<audio_url>" -o /tmp/podcast.m4a --progress-bar
+   curl -x http://YOUR_PROXY_HOST:PORT -L "<audio_url>" -o /tmp/podcast.m4a --progress-bar
    ```
 
 5. **转写（faster-whisper，CPU 模式）**

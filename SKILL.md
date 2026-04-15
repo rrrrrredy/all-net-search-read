@@ -1,6 +1,6 @@
 ---
 name: all-net-search-read
-description: "Social media content search and extraction tool. Supports WeChat Official Accounts, Xiaohongshu, Twitter/X, YouTube, Reddit, Bilibili, Weibo. Triggers: search WeChat, search Xiaohongshu, search Weibo, search Twitter, search Bilibili, search YouTube, search Reddit, read article, full-web search, podcast transcript, Bilibili video download."
+description: "Social media content search and extraction tool. Supports WeChat Official Accounts, Xiaohongshu, Twitter/X, YouTube, Reddit, Bilibili, Weibo. Triggers: search WeChat, search Xiaohongshu, search Weibo, search Twitter, search Bilibili, search YouTube, search Reddit, read article, full-web search, podcast transcript, Bilibili video download. Not for: internal corporate document search; login-required premium content; large-scale systematic scraping."
 tags: [search, social-media, wechat, xiaohongshu, twitter, youtube, bilibili, weibo]
 ---
 
@@ -302,6 +302,9 @@ pip install 'rdt-cli>=0.4.2'
 
 ---
 
+
+> 各平台详细技术笔记（代理配置、API 特性、已知限制）见 `references/platform-notes.md`。
+
 ## 🔒 Security Constraints (Mandatory)
 
 1. **Public internet content only**: Do not access internal/corporate domains
@@ -317,3 +320,13 @@ pip install 'rdt-cli>=0.4.2'
 3. **Xiaohongshu notes require login cookies**: Without cookies, only web search fallback provides indirect content. Two login options: ① Cookie copy (recommended, 30 sec) ② SMS verification relay
 4. Some platforms (WeChat, Xiaohongshu) may be subject to anti-scraping restrictions
 5. Scheduled monitoring requires cron job configuration
+
+---
+
+## Gotchas
+
+⚠️ **小红书沙箱 IP 被封** → 所有登录路径失败，只能用 web search `site:xiaohongshu.com` 降级获取摘要。
+⚠️ **微信公众号需要代理** → 沙箱直连微信服务器超时，必须配置 HTTP 代理。
+⚠️ **Twitter/X guest token 有效期短** → 通常几小时过期，脚本会自动重新获取，但连续失败 3 次应停止。
+⚠️ **B站字幕需要登录** → 无 cookie 只能获取视频流，字幕/弹幕需要登录态。
+⚠️ **多链接批量获取需确认** → 一次请求含多个 URL 时，必须列出并获得用户确认（最多 5 个/批）。

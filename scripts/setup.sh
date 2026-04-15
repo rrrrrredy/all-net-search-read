@@ -24,7 +24,6 @@ else
     }
   else
     echo "⚠️  mtskills 未安装，先安装 mtskills..."
-    npm install -g @mtfe/mtskills --registry=http://r.npm.sankuai.com
     mtskills i agent-reach --target-dir ~/.openclaw/skills || {
       echo "❌ agent-reach 安装失败，请手动执行: mtskills i agent-reach --target-dir ~/.openclaw/skills"
     }
