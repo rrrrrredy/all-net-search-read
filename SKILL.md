@@ -1,10 +1,11 @@
 ---
 name: all-net-search-read
 description: "Social media content search and extraction tool. Supports WeChat Official Accounts, Xiaohongshu, Twitter/X, YouTube, Reddit, Bilibili, Weibo. Triggers: search WeChat, search Xiaohongshu, search Weibo, search Twitter, search Bilibili, search YouTube, search Reddit, read article, full-web search, podcast transcript, Bilibili video download. Not for: internal corporate document search; login-required premium content; large-scale systematic scraping."
+version: 18.0.0
 tags: [search, social-media, wechat, xiaohongshu, twitter, youtube, bilibili, weibo]
 ---
 
-# 🕵️ All-Net Search & Read V18
+# 🕵️ All-Net Search & Read 18.0.0
 
 **Give your AI Agent the ability to search and read across all major platforms — WeChat, Weibo, Xiaohongshu, Twitter/X, YouTube, Reddit, Bilibili, and more.**
 
@@ -330,3 +331,9 @@ pip install 'rdt-cli>=0.4.2'
 ⚠️ **Twitter/X guest token 有效期短** → 通常几小时过期，脚本会自动重新获取，但连续失败 3 次应停止。
 ⚠️ **B站字幕需要登录** → 无 cookie 只能获取视频流，字幕/弹幕需要登录态。
 ⚠️ **多链接批量获取需确认** → 一次请求含多个 URL 时，必须列出并获得用户确认（最多 5 个/批）。
+
+## Changelog
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| 18.0.0 | 2026-04-15 | Quality fix: standardize versioning, add Gotchas/Hard Stop sections |
