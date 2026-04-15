@@ -26,7 +26,6 @@ git clone https://github.com/rrrrrredy/all-net-search-read.git ~/.openclaw/skill
 - ▶️ **YouTube** — Video info, subtitles, comments
 - 💬 **Reddit** — Post and comment extraction
 - 📝 **Web Distilling** — Convert any webpage to clean Markdown
-- 📊 **Content Comparison** — Compare viewpoints from multiple sources on the same topic
 - 🔔 **Scheduled Monitoring** — Monitor specific keywords/accounts for updates
 - 📚 **Bookmarks & History** — Save and recall interesting content
 
@@ -39,7 +38,10 @@ git clone https://github.com/rrrrrredy/all-net-search-read.git ~/.openclaw/skill
 搜 B站 deep learning tutorials   # Bilibili search
 搜 YouTube transformer explained  # YouTube search
 搜 Reddit LLM benchmarks         # Reddit search
+搜微博 AI 热点                   # Weibo search
 总结 https://example.com/article  # Summarize any URL
+播客转写 某期节目                  # Podcast transcript
+B站视频下载 BV1xxxxxxxxx          # Bilibili video download
 监控 AI Agent updates             # Set up monitoring
 ```
 
@@ -52,8 +54,11 @@ all-net-search-read/
 │   ├── all_net_search_read.py
 │   └── setup.sh
 ├── references/
-│   └── platform-notes.md
-└── config/
+│   ├── platform-notes.md
+│   └── xiaohongshu-login.md
+├── config/
+│   └── default_config.json
+└── .gitignore
 ```
 
 ## Requirements
