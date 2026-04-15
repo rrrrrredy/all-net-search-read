@@ -19,7 +19,7 @@ tags: [search, social-media, wechat, xiaohongshu, twitter, youtube, bilibili, we
 
 ⚠️ **Platform-specific search** → Each platform uses its own search strategy (site: prefix + web search). Don't mix platform search methods.
 
-⚠️ **Twitter/X profile + timeline don't require login** → Use `x_scraper.py` (guest token method) for public profiles and timelines. Search functionality is still limited without auth-token.
+⚠️ **Twitter/X profile + timeline don't require login** → Use agent-reach (`xreach`) for public profiles and timelines. Search functionality is still limited without auth-token.
 
 ⚠️ **Web search backend** → Supports two tiers: **agent-reach** (xreach/xread) for best results across 14+ platforms, with **Jina Search API** (free, no key) as automatic fallback. Install agent-reach via `npx clawhub install agent-reach` for full capabilities.
 
@@ -152,7 +152,7 @@ Each platform uses appropriate tools:
 | Bilibili | Bilibili API + yt-dlp | ❌ No |
 | YouTube | yt-dlp | ❌ No |
 | Reddit | Reddit JSON API | ❌ No |
-| Twitter/X | xreach (agent-reach) → `x_scraper.py` (guest token fallback) | ❌ No (profile/timeline); search via xreach needs auth-token |
+| Twitter/X | xreach (agent-reach) → web search fallback | ❌ No (profile/timeline); search via xreach needs auth-token |
 | General Web | xread (agent-reach) → Jina Reader / curl fallback | ❌ No |
 
 > ⚠️ **Important**: Xiaohongshu search and note detail pages both require login cookies. Without cookies, only third-party aggregated content is available. With cookies, Playwright can directly search and read full notes.
@@ -171,11 +171,11 @@ Each platform uses appropriate tools:
 ### Twitter/X Search / Profile / Timeline
 
 ```
-Step 1: Get profile or timeline (no login required)
-  python3 scripts/x_scraper.py profile <handle>
-  python3 scripts/x_scraper.py timeline <handle> --count 20
+Step 1: Use agent-reach (xreach) for profile or timeline (no login required)
+  xreach twitter profile <handle>
+  xreach twitter timeline <handle> --count 20
   ✅ Success → Return followers, bio, tweet list
-  ❌ Proxy unavailable / API change → Step 2
+  ❌ agent-reach unavailable / API change → Step 2
 
 Step 2: Fallback web search
   Web search for "site:twitter.com {keyword}"
@@ -183,7 +183,7 @@ Step 2: Fallback web search
   ❌ Failure → Inform user to configure search API or try again later
 ```
 
-> ⚠️ `x_scraper.py` requires `HTTP_PROXY` to be set for environments where direct X access is blocked.
+> ⚠️ In environments where direct X access is blocked, ensure `HTTP_PROXY` is set for agent-reach to connect.
 
 ### General Fallback Principle
 Prefer agent-reach (xreach/xread) → platform-specific API → Jina web search → curl
@@ -240,7 +240,6 @@ pip install 'rdt-cli>=0.4.2'
 
 ### Optional: Dependency Skills
 - [agent-reach](https://clawhub.com) — Multi-platform search & read (xreach/xread/mcporter CLIs)
-- [x-twitter-scraper](https://github.com/rrrrrredy/x-twitter-scraper) — Twitter/X guest token scraper (for profile/timeline without login)
 
 ---
 

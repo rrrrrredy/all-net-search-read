@@ -17,16 +17,16 @@ else
   echo "⚠️  agent-reach Skill 未安装"
   MISSING=1
   echo "📦 安装 agent-reach..."
-  echo "   注意：agent-reach 不在 Friday 广场，mtskills i agent-reach 会报 400，这是正常现象"
-  if command -v mtskills &>/dev/null; then
-    mtskills i agent-reach --target-dir ~/.openclaw/skills || {
-      echo "❌ agent-reach 安装失败，请手动执行: mtskills i agent-reach --target-dir ~/.openclaw/skills"
+  if command -v npx &>/dev/null; then
+    npx clawhub install agent-reach || {
+      echo "❌ agent-reach 安装失败，请手动执行: npx clawhub install agent-reach"
+    }
+  elif command -v pip &>/dev/null; then
+    pip install agent-reach && agent-reach install --env=auto --safe || {
+      echo "❌ agent-reach 安装失败，请手动执行: pip install agent-reach"
     }
   else
-    echo "⚠️  mtskills 未安装，先安装 mtskills..."
-    mtskills i agent-reach --target-dir ~/.openclaw/skills || {
-      echo "❌ agent-reach 安装失败，请手动执行: mtskills i agent-reach --target-dir ~/.openclaw/skills"
-    }
+    echo "❌ 无法自动安装 agent-reach，请手动执行: npx clawhub install agent-reach 或 pip install agent-reach"
   fi
 fi
 

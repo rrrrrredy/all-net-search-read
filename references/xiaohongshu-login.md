@@ -10,9 +10,8 @@ Xiaohongshu notes require login cookies — search engines cannot effectively in
 3. Copy the values of these two fields:
    - web_session
    - a1
-4. Run the setup script:
-   python3 scripts/xiaohongshu-setup-cookies.py
-5. Paste both values when prompted; auto-saved to cookies config
+4. Send both values to the agent
+5. Agent saves them to cookies config
 ```
 
 Cookies typically last several days to weeks; repeat steps when expired.
