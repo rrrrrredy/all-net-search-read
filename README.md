@@ -29,6 +29,25 @@ git clone https://github.com/rrrrrredy/all-net-search-read.git ~/.openclaw/skill
 - 🔔 **Scheduled Monitoring** — Monitor specific keywords/accounts for updates
 - 📚 **Bookmarks & History** — Save and recall interesting content
 
+## Optional X/Twitter Depth With TweetClaw
+
+Use this skill for broad social media search and reading across many platforms.
+When an OpenClaw workspace needs deeper X/Twitter workflows, pair it with
+[TweetClaw](https://github.com/Xquik-dev/tweetclaw), the
+[@xquik/tweetclaw](https://www.npmjs.com/package/@xquik/tweetclaw) OpenClaw
+plugin.
+
+```bash
+openclaw plugins install @xquik/tweetclaw
+```
+
+TweetClaw covers X/Twitter-specific jobs such as search tweets, search tweet
+replies, follower export, user lookup, media download, monitor tweets, webhooks,
+giveaway draws, and reviewed post tweets or post tweet replies. Keep
+all-net-search-read responsible for cross-platform discovery, then hand reviewed
+tweet URLs, handles, keywords, or summaries to TweetClaw when the task requires
+typed X/Twitter actions.
+
 ## Usage
 
 ```
@@ -66,7 +85,7 @@ all-net-search-read/
 - OpenClaw agent runtime
 - Python 3.8+
 - `requests`, `beautifulsoup4`
-- Optional: [agent-reach](https://github.com/openclaw/agent-reach) for enhanced multi-platform search
+- Optional: [agent-reach](https://github.com/Panniantong/Agent-Reach) for enhanced multi-platform search
 - Optional: Xiaohongshu login cookies for full note access
 
 ## License
