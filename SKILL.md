@@ -146,7 +146,7 @@ Each platform uses appropriate tools:
 | Platform | Backend Tool | Account Required |
 |---|---|---|
 | Xiaohongshu | Public web search fallback only | ❌ No; login-only notes are out of scope |
-| Weibo | Web search + Playwright (visitor cookie) | ❌ No |
+| Weibo | Web search + Playwright visitor-mode public rendering | ❌ No |
 | Bilibili | Public Bilibili API + yt-dlp where permitted | ❌ No |
 | YouTube | yt-dlp | ❌ No |
 | Reddit | Reddit JSON API | ❌ No |

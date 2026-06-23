@@ -28,9 +28,9 @@
    - catclaw-search 搜索：`"@用户名 site:weibo.com"` 或 `"weibo.com/u/用户名"`
    - 从搜索结果 URL 提取 UID（`weibo.com/u/<UID>` 格式）
 
-2. **获取 visitor cookie**（agent-browser 打开任意微博页面即自动获得）
+2. **使用访客态公开渲染**（agent-browser 打开微博公开页面）
    - `browser open: https://weibo.com/u/<UID>`
-   - 页面会自动设置 visitor cookie，无需登录即可访问公开内容
+   - 只读取公开可见内容；不要检查、导出、复制或保存 cookie/session 值
 
 3. **抓取单条微博正文**
    - 正文 CSS selector：`.detail_wbtext_4CRf9`

@@ -37,8 +37,6 @@ class AllNetSearchRead:
     """全网搜读主类"""
     
     def __init__(self):
-        os.makedirs(CONFIG_DIR, exist_ok=True)
-        os.makedirs(DATA_DIR, exist_ok=True)
         self.history_file = os.path.join(DATA_DIR, "history.json")
         self.favorites_file = os.path.join(DATA_DIR, "favorites.json")
         self.monitors_file = os.path.join(DATA_DIR, "monitors.json")
@@ -58,6 +56,7 @@ class AllNetSearchRead:
         return default
     
     def _save_json(self, path: str, data):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     
