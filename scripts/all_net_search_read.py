@@ -13,6 +13,18 @@ import shutil
 import re
 from typing import List, Dict, Optional
 
+
+def _configure_stdio() -> None:
+    """Prefer UTF-8 output on Windows consoles that default to GBK."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
+_configure_stdio()
+
 # 配置目录
 CONFIG_DIR = os.path.expanduser("~/.all-net-search-read")
 DATA_DIR = os.path.join(CONFIG_DIR, "data")

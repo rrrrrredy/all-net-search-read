@@ -1,8 +1,8 @@
 # 各平台注意事项
 
 ## 小红书
-- 沙箱 IP 被封，所有登录路径失败
-- 降级：catclaw-search → web_fetch（无登录态内容）
+- full note pages often require login; this skill does not collect or use cookies, tokens, SMS codes, QR login, or browser profiles
+- 降级：public web search → readable public page or user-provided text
 
 ## 微信公众号
 - 必须走上游代理：YOUR_PROXY_HOST:PORT
@@ -44,21 +44,23 @@
 - 未登录只能看公开帖子，无法看"仅粉丝可见"内容
 - 获取带图片/视频的帖子时只能得到文本，不能直接下载媒体文件
 - 精确时间线依赖搜索结果排序，不保证绝对准确顺序
-- 需要完整历史/登录内容 → 告知用户用 opencli + Chrome extension relay（需用户手动操作）
+- 需要完整历史/登录内容 → 本 skill 不支持；请用户提供其有权分享的公开 URL 或文本
 
 ## B站
 - 字幕内容需要 Chrome 插件 attach tab（用户手动点 Attach Tab）
 - 热榜数据可直接 web_fetch 无需登录
 
-### B站视频流下载 SOP
+### B站公开视频转写 SOP
 
-**原理**：B站公开 API 无需 cookie 即可获取视频流 CDN URL，但 bilivideo.com 沙箱直连超时，必须走上游代理 YOUR_PROXY_HOST:PORT。
+**边界**：仅用于无需登录即可访问的公开视频，并且只为转写/摘要临时处理媒体文件。不处理付费、大会员、私密、地区受限或需要 cookie 的内容。
+
+**原理**：B站公开 API 无需 cookie 即可获取部分公开视频流 CDN URL，但 bilivideo.com 沙箱直连可能超时，必要时走用户配置的上游代理。
 
 **可用路径表**：
 
 | 方法 | 可用性 | 说明 |
 |------|--------|------|
-| 公开 API + 上游代理下载 | ✅ 稳定 | **主路径** |
+| 公开 API + 上游代理临时获取 | 可用性需运行时验证 | **主路径** |
 | yt-dlp 直连 | ❌ 不可用 | B站 412 反爬，无 cookie |
 | yt-dlp + 代理 | ❌ 不可用 | bilivideo.com 代理 403 CONNECT tunnel |
 | 直连 bilivideo.com | ❌ 不可用 | 沙箱出口 IP 超时 |
@@ -86,7 +88,7 @@ curl -s "https://api.bilibili.com/x/player/playurl?avid=<aid>&cid=<cid>&qn=16&fn
   | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['durl'][0]['url'])"
 ```
 
-**步骤4：用上游代理下载（关键）**
+**步骤4：用上游代理临时获取媒体（仅公开视频）**
 ```bash
 curl -x http://YOUR_PROXY_HOST:PORT -L "<CDN_URL>" -o /tmp/bili_video.mp4 \
   -H "User-Agent: Mozilla/5.0" -H "Referer: https://www.bilibili.com/video/<BV>" \
@@ -102,7 +104,7 @@ text = ' '.join([s.text for s in segments])
 ```
 
 **踩坑**：
-- bilivideo.com CDN URL 约 1 小时有效，尽快下载
+- bilivideo.com CDN URL 约 1 小时有效，尽快处理并删除临时文件
 - 本地代理 127.0.0.1:8118 对 bilivideo.com 返回 403 CONNECT tunnel，必须用 YOUR_PROXY_HOST:PORT
 - Referer 头不能省，否则 CDN 返回 403
 - 付费/会员视频无法用此方法
@@ -110,13 +112,13 @@ text = ' '.join([s.text for s in segments])
 
 ## 小宇宙播客（xiaoyuzhoufm.com）
 
-**特性**：Next.js SPA，所有直接访问方式失败，只能走 RSS Feed。
+**特性**：Next.js SPA，直接静态读取通常只能得到 JS 骨架，优先走 RSS Feed。
 
 **沙箱可用路径**（推荐顺序）：
 
 | 方法 | 可用性 | 说明 |
 |------|--------|------|
-| iTunes API → RSS → 音频下载 | ✅ 稳定 | **主路径，见下方 SOP** |
+| iTunes API → RSS → 临时音频获取 | 可用性需运行时验证 | **主路径，见下方 SOP** |
 | web_fetch 直接访问 | ❌ 不可用 | SPA，只返回 JS 骨架 |
 | Jina Reader | ❌ 不可用 | SPA 无法渲染 |
 | yt-dlp | ❌ 不可用 | 返回 HTTP 404 |
@@ -146,7 +148,7 @@ text = ' '.join([s.text for s in segments])
    print(f"{title} -> {audio_url}")
    ```
 
-4. **下载音频（必须走上游代理）**
+4. **临时获取音频（必须走上游代理）**
    ```bash
    curl -x http://YOUR_PROXY_HOST:PORT -L "<audio_url>" -o /tmp/podcast.m4a --progress-bar
    ```

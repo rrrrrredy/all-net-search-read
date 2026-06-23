@@ -21,7 +21,7 @@ git clone https://github.com/rrrrrredy/all-net-search-read.git ~/.openclaw/skill
 - 🔍 **Full-Web Search** — Semantic search across the internet with time/source filtering
 - 📱 **WeChat Articles** — Search and read WeChat Official Account articles
 - 🐦 **Twitter/X** — View tweets, user profiles, search topics (no login for profile/timeline)
-- 📕 **Xiaohongshu** — Note content extraction and search (login cookies recommended)
+- 📕 **Xiaohongshu** — Public web-search snippets and readable source-page discovery
 - 🎬 **Bilibili** — Video info, subtitles, comments
 - ▶️ **YouTube** — Video info, subtitles, comments
 - 💬 **Reddit** — Post and comment extraction
@@ -60,7 +60,7 @@ typed X/Twitter actions.
 搜微博 AI 热点                   # Weibo search
 总结 https://example.com/article  # Summarize any URL
 播客转写 某期节目                  # Podcast transcript
-B站视频下载 BV1xxxxxxxxx          # Bilibili video download
+B站视频转写 BV1xxxxxxxxx          # Public Bilibili transcript workflow
 监控 AI Agent updates             # Set up monitoring
 ```
 
@@ -74,7 +74,7 @@ all-net-search-read/
 │   └── setup.sh
 ├── references/
 │   ├── platform-notes.md
-│   └── xiaohongshu-login.md
+│   └── xiaohongshu-public-fallback.md
 ├── config/
 │   └── default_config.json
 └── .gitignore
@@ -86,7 +86,7 @@ all-net-search-read/
 - Python 3.8+
 - `requests`, `beautifulsoup4`
 - Optional: [agent-reach](https://github.com/Panniantong/Agent-Reach) for enhanced multi-platform search
-- Optional: Xiaohongshu login cookies for full note access
+- No cookies, tokens, SMS codes, QR login, or private account state are required or accepted
 
 ## License
 
