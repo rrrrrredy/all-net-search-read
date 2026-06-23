@@ -1,8 +1,6 @@
 ---
 name: all-net-search-read
-description: "Social media content search and extraction tool. Supports WeChat Official Accounts, Xiaohongshu, Twitter/X, YouTube, Reddit, Bilibili, Weibo. Triggers: search WeChat, search Xiaohongshu, search Weibo, search Twitter, search Bilibili, search YouTube, search Reddit, read article, full-web search, podcast transcript, Bilibili video download. Not for: internal corporate document search; login-required premium content; large-scale systematic scraping."
-version: 18.0.0
-tags: [search, social-media, wechat, xiaohongshu, twitter, youtube, bilibili, weibo]
+description: 'Public social media content search and extraction tool. Supports WeChat Official Accounts, Xiaohongshu public web results, Twitter/X public profiles, YouTube, Reddit, Bilibili public metadata/transcripts, and Weibo visible posts. Triggers: search WeChat, search Xiaohongshu, search Weibo, search Twitter, search Bilibili, search YouTube, search Reddit, read article, full-web search, podcast transcript. Not for: internal documents; login-required or premium content; cookies/tokens/SMS/QR login; large-scale systematic scraping.'
 ---
 
 # 🕵️ All-Net Search & Read 18.0.0
@@ -15,19 +13,19 @@ tags: [search, social-media, wechat, xiaohongshu, twitter, youtube, bilibili, we
 
 > Known pitfalls — check here first before debugging.
 
-⚠️ **Xiaohongshu notes require login cookies** → Both search and detail pages require authentication. Without cookies, only indirect third-party content is available via web search engines. Login options: ① F12 copy cookies (30 sec, recommended) ② SMS verification relay ③ QR code scan ④ Console JS one-liner.
+⚠️ **Xiaohongshu full note pages often require login** → Do not request or store cookies, SMS codes, QR login, or session tokens. Use public web search results only; if the user needs exact note text, ask them to paste the content or provide a public page that is readable without login.
 
 ⚠️ **Platform-specific search** → Each platform uses its own search strategy (site: prefix + web search). Don't mix platform search methods.
 
-⚠️ **Twitter/X profile + timeline don't require login** → Use agent-reach (`xreach`) for public profiles and timelines. Search functionality is still limited without auth-token.
+⚠️ **Twitter/X profile + timeline don't require login** → Use agent-reach (`xreach`) for public profiles and timelines. Search functionality is limited without authentication; do not request auth tokens or cookies.
 
 ⚠️ **Web search backend** → Supports two tiers: **agent-reach** (xreach/xread) for best results across 14+ platforms, with **Jina Search API** (free, no key) as automatic fallback. Install agent-reach via `npx clawhub install agent-reach` for full capabilities.
 
-⚠️ **小红书沙箱 IP 被封** → 所有登录路径失败，只能用 web search `site:xiaohongshu.com` 降级获取摘要。
+⚠️ **小红书沙箱 IP 被封或页面要求登录** → 只能用 web search `site:xiaohongshu.com` 降级获取公开摘要或第三方索引结果。
 
 ⚠️ **微信公众号需要代理** → 沙箱直连微信服务器超时，必须配置 HTTP 代理（`HTTP_PROXY`）。
 
-⚠️ **B站字幕需要登录** → 无 cookie 只能获取视频流，字幕/弹幕需要登录态。
+⚠️ **B站字幕/弹幕可能需要登录** → 不请求 cookie；仅处理无需登录即可访问的公开视频元数据、音频或转写结果。
 
 ⚠️ **多链接批量获取需确认** → 一次请求含多个 URL 时，必须列出并获得用户确认（最多 5 个/批）。
 
@@ -46,8 +44,8 @@ If the same tool call fails more than 3 times, stop immediately. List all failed
 | 🔍 **Full-Web Search** | Semantic search across the internet with time/source filtering |
 | 📱 **WeChat Articles** | Search and read WeChat Official Account articles |
 | 🐦 **Twitter/X** | View tweets, user profiles, search topics |
-| 📕 **Xiaohongshu** | Note content extraction, search |
-| 🎬 **Bilibili** | Video info, subtitles, comments |
+| 📕 **Xiaohongshu** | Public web-search snippets and source-page discovery |
+| 🎬 **Bilibili** | Public video info and transcript-oriented workflows |
 | ▶️ **YouTube** | Video info, subtitles, comments |
 | 💬 **Reddit** | Post and comment extraction |
 | 📝 **Web Distilling** | Convert any webpage to clean Markdown |
@@ -147,15 +145,15 @@ Each platform uses appropriate tools:
 
 | Platform | Backend Tool | Account Required |
 |---|---|---|
-| Xiaohongshu | Playwright + cookies (with login) / web search fallback (without login) | ⚠️ Recommend configuring cookies |
+| Xiaohongshu | Public web search fallback only | ❌ No; login-only notes are out of scope |
 | Weibo | Web search + Playwright (visitor cookie) | ❌ No |
-| Bilibili | Bilibili API + yt-dlp | ❌ No |
+| Bilibili | Public Bilibili API + yt-dlp where permitted | ❌ No |
 | YouTube | yt-dlp | ❌ No |
 | Reddit | Reddit JSON API | ❌ No |
-| Twitter/X | xreach (agent-reach) → web search fallback | ❌ No (profile/timeline); search via xreach needs auth-token |
+| Twitter/X | xreach (agent-reach) → web search fallback | ❌ No; authenticated search is out of scope |
 | General Web | xread (agent-reach) → Jina Reader / curl fallback | ❌ No |
 
-> ⚠️ **Important**: Xiaohongshu search and note detail pages both require login cookies. Without cookies, only third-party aggregated content is available. With cookies, Playwright can directly search and read full notes.
+> ⚠️ **Important**: Xiaohongshu search and note detail pages often require login. This skill does not request or store cookies; use public search snippets, public source pages, or user-provided text only.
 
 ---
 
@@ -163,10 +161,10 @@ Each platform uses appropriate tools:
 
 ### Xiaohongshu Search
 
-> Xiaohongshu notes require login cookies. Without cookies, falls back to web search for indirect content.
-> **For detailed login setup (4 options: Cookie copy, SMS relay, QR scan, Console JS)**, see `references/xiaohongshu-login.md`.
+> Xiaohongshu full note pages often require login. This skill does not collect login cookies or run login flows.
+> For the public-only fallback policy, see `references/xiaohongshu-public-fallback.md`.
 
-**Quick path**: Check cookies → valid: Playwright search → expired/missing: web search fallback (`site:xiaohongshu.com`)
+**Quick path**: public web search (`site:xiaohongshu.com`) → readable public result → summarize with source caveat; login wall → ask user to paste content or provide a readable public source.
 
 ### Twitter/X Search / Profile / Timeline
 
@@ -253,6 +251,7 @@ pip install 'rdt-cli>=0.4.2'
 3. **No large-scale scraping**: Do not use for systematic batch collection, automated loop downloads, or high-frequency requests to a single site
 4. **Respect robots.txt and anti-scraping protections**
 5. **Scheduled monitoring requires user notification**: Before setting up monitoring tasks, explain monitoring target, frequency, and data destination to the user
+6. **No credential collection**: Do not ask for cookies, tokens, SMS codes, QR-code login, browser profiles, or private account state.
 
 ## Changelog
 
