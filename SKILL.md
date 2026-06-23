@@ -37,6 +37,22 @@ If the same tool call fails more than 3 times, stop immediately. List all failed
 
 ---
 
+## Input / Output Contract
+
+Required input is one of: a public URL, a platform + keyword query, a public account/profile identifier, or pasted content. For multi-link requests, list the URLs and obtain confirmation before processing more than one link.
+
+Return a fixed result shape:
+
+1. Task interpreted: platform, query/URL, and access mode.
+2. Retrieval path: primary tool and any fallback used.
+3. Results: extracted public content, summaries, metadata, or transcript snippets.
+4. Source evidence: links, timestamps, account/profile identifiers, and caveats.
+5. Missing or blocked content: login walls, deleted content, rate limits, or unsupported private access.
+
+Do not output private content, cookies, tokens, login instructions, or claims that a login-only page was fully read.
+
+---
+
 ## ✨ Core Features
 
 | Feature | Description |

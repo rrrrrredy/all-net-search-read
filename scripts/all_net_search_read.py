@@ -11,6 +11,9 @@ import json
 import subprocess
 import shutil
 import re
+import urllib.error
+import urllib.request
+from urllib.parse import quote
 from typing import List, Dict, Optional
 
 
@@ -98,23 +101,41 @@ class AllNetSearchRead:
     
     def search(self, query: str, platform: str = None) -> str:
         """全网搜索 — agent-reach (xreach) 优先，Jina fallback"""
+        prior_errors = []
         if platform:
             if HAS_XREACH:
                 cmd = self._get_platform_cmd(platform, query)
                 result = self._run_command(cmd)
-                if result and "❌" not in result and len(result.strip()) > 20:
+                if self._looks_successful_tool_output(result):
                     return result
+                if result:
+                    prior_errors.append(f"agent-reach unavailable for {platform}: {self._summarize_tool_error(result)}")
             # Fallback to web search
             search_query = self._get_platform_query(platform, query)
-            return self._web_search(search_query)
+            return self._web_search(search_query, prior_errors)
         else:
             if HAS_XREACH:
                 cmd = ["xreach", "search", query, "--json"]
                 result = self._run_command(cmd)
-                if result and "❌" not in result and len(result.strip()) > 20:
+                if self._looks_successful_tool_output(result):
                     return result
+                if result:
+                    prior_errors.append(f"agent-reach unavailable: {self._summarize_tool_error(result)}")
             # Fallback to web search
-            return self._web_search(query)
+            return self._web_search(query, prior_errors)
+
+    def _summarize_tool_error(self, result: str) -> str:
+        if "not authenticated" in result.lower():
+            return "installed but not authenticated; this skill will not request or print cookies, tokens, or browser secrets"
+        first_line = next((line.strip() for line in result.splitlines() if line.strip()), "")
+        return first_line[:200] if first_line else "no diagnostic output"
+
+    def _looks_successful_tool_output(self, result: str) -> bool:
+        if not result or len(result.strip()) <= 20:
+            return False
+        lowered = result.lower()
+        failure_markers = ["not authenticated", "error", "failed", "执行失败", "❌"]
+        return not any(marker in lowered for marker in failure_markers)
 
     def _get_platform_cmd(self, platform: str, query: str) -> List[str]:
         """获取平台特定 agent-reach 命令"""
@@ -148,17 +169,29 @@ class AllNetSearchRead:
         }
         return platform_map.get(platform.lower(), query)
     
-    def _web_search(self, query: str) -> str:
+    def _web_search(self, query: str, prior_errors: Optional[List[str]] = None) -> str:
         """Jina Search API fallback（free, no key required）"""
-        jina_url = f"https://s.jina.ai/{query}"
-        cmd = ["curl", "-s", "-H", "Accept: application/json", jina_url]
+        jina_url = f"https://s.jina.ai/{quote(query, safe='')}"
+        errors = list(prior_errors or [])
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-            if result.stdout and len(result.stdout) > 50:
-                return result.stdout
-        except:
-            pass
-        return f"❌ Web search failed for: {query}. Install agent-reach for better results: npx clawhub install agent-reach"
+            request = urllib.request.Request(
+                jina_url,
+                headers={"Accept": "application/json", "User-Agent": "all-net-search-read/18.0"}
+            )
+            with urllib.request.urlopen(request, timeout=20) as response:
+                text = response.read().decode("utf-8", errors="replace")
+            if text and len(text) > 50:
+                return text
+            errors.append("Jina Search returned an empty response")
+        except (TimeoutError, urllib.error.URLError, OSError) as exc:
+            errors.append(f"Jina Search unavailable: {exc}")
+
+        details = "\n".join(f"- {item}" for item in errors)
+        suffix = f"\n{details}" if details else ""
+        return (
+            f"❌ Web search failed for: {query}.{suffix}\n"
+            "Configure agent-reach outside this chat if platform search is required, retry from a network that can reach s.jina.ai, or provide a public URL/pasted content."
+        )
     
     def read_url(self, url: str) -> str:
         """读取网页内容 — xread 优先，Jina r.jina.ai fallback"""
@@ -316,7 +349,13 @@ class AllNetSearchRead:
     def _run_command(self, cmd: List[str]) -> str:
         """运行命令"""
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            executable = shutil.which(cmd[0])
+            use_shell = False
+            run_cmd = cmd
+            if executable and executable.lower().endswith((".cmd", ".bat")):
+                run_cmd = subprocess.list2cmdline([executable] + cmd[1:])
+                use_shell = True
+            result = subprocess.run(run_cmd, capture_output=True, text=True, timeout=60, shell=use_shell)
             return result.stdout or result.stderr
         except subprocess.TimeoutExpired:
             return "⏱️ 命令超时"
@@ -385,17 +424,27 @@ Install for best results: npx clawhub install agent-reach
             return self.get_monitors()
         
         # 搜索
+        platforms = ['小红书', '推特', 'twitter', 'B站', 'bilibili', 'youtube', 'reddit', '公众号', '微信']
+        platform = None
+
+        for p in platforms:
+            if query.lower().startswith(p.lower()):
+                platform = p
+                query = query[len(p):].strip()
+                break
+
         if query.startswith('搜') or query.startswith('找'):
+            query = query[1:].strip()
             # 提取平台前缀
-            platforms = ['小红书', '推特', 'twitter', 'B站', 'bilibili', 'youtube', 'reddit', '公众号', '微信']
-            platform = None
-            
             for p in platforms:
-                if query.startswith(p):
+                if query.lower().startswith(p.lower()):
                     platform = p
                     query = query[len(p):].strip()
                     break
-            
+
+            if not query:
+                return "请提供搜索关键词"
+
             return self.search(query, platform)
         
         # 总结
@@ -421,6 +470,13 @@ Install for best results: npx clawhub install agent-reach
 
 def main():
     if len(sys.argv) > 1:
+        if sys.argv[1] in ("-h", "--help"):
+            print(AllNetSearchRead().help())
+            return
+        if sys.argv[1].startswith("-"):
+            print(f"Unknown option: {sys.argv[1]}", file=sys.stderr)
+            print(AllNetSearchRead().help())
+            sys.exit(2)
         query = " ".join(sys.argv[1:])
     else:
         query = sys.stdin.read().strip()
